@@ -12,6 +12,7 @@ namespace Service.Controllers
     {
         public int Id { get; set; }
         public DateTime Timestamp { get; set; }
+        public string Text { get; set; }
     }
 
     public class ItemInputModel
@@ -44,6 +45,13 @@ namespace Service.Controllers
         [Route("~/")]
         public JsonResult Create(ItemInputModel input)
         {
+            // :: Basic validation
+            if (string.IsNullOrEmpty(input.Text))
+            {
+                Response.StatusCode = 409;
+                return Json(new { error = "Invalid input." });
+            }
+
             // http://www.litedb.org/
             using (var db = new LiteDatabase(DB_PATH))
             {
@@ -52,12 +60,14 @@ namespace Service.Controllers
                 var item = new Item()
                 {
                     Timestamp = DateTime.Now,
+                    Text = input.Text,
                 };
                 items.Insert(item);
 
                 var result = new
                 {
                     id = item.Id,
+                    text = item.Text,
                     timestamp = item.Timestamp.ToJavaScriptMilliseconds()
                 };
 
@@ -82,6 +92,7 @@ namespace Service.Controllers
                 var result = new
                 {
                     id = item.Id,
+                    text = item.Text,
                     timestamp = item.Timestamp.ToJavaScriptMilliseconds()
                 };
 
