@@ -25,8 +25,15 @@ namespace Service.Controllers
     {
         private const string DB_PATH = @"C:\Temp\ItemDatabase.db";
 
+
         [Route("~/", Name = "default")]
-        public JsonResult Index()
+        public ActionResult Index()
+        {
+            return RedirectToAction("List");
+        }
+
+        [Route("~/list")]
+        public JsonResult List()
         {
             // http://www.litedb.org/
             using (var db = new LiteDatabase(DB_PATH))
