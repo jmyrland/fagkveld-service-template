@@ -1,0 +1,15 @@
+{
+  "name": "node-service-template",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"LUL\" && exit 1"
+  },
+  "dependencies": {
+    "body-parser": "^1.18.0",
+    "express": "^4.15.4",
+    "lowdb": "^1.0.0",
+    "request": "^2.81.0",
+    "shortid": "^2.2.8"
+  }
+}
