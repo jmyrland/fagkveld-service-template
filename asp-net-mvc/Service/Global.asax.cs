@@ -13,7 +13,7 @@ namespace Service
             RouteConfig.RegisterRoutes(RouteTable.Routes);
 
             ServiceHelper.RegisterService(new ServiceMetadata {
-                Name = "template",      // This is specified in the manifest
+                Name = "mvc-template",  // This is specified in the manifest
                 Port = 51673,           // Check the project settings
                 Address = "127.0.0.1",  // Look up your ip/host, replace it with the current value
             });
