@@ -8,7 +8,7 @@ namespace Service.Helpers
 {
     public static class ServiceHelper
     {
-        private const string ROUTER_URL = "https://ideas-router.now.sh";
+        private const string ROUTER_URL = "http://192.168.75.93:3000";
 
         public static void RegisterService(ServiceMetadata metadata)
         {
@@ -25,7 +25,7 @@ namespace Service.Helpers
             try
             {
                 var httpResponse = (HttpWebResponse)httpWebRequest.GetResponse();
-                
+
                 if (httpResponse.StatusCode != HttpStatusCode.NoContent)
                 {
                     using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
