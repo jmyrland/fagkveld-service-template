@@ -1,71 +1,127 @@
-# Avatar service
+# Vote service
 
 ## Metadata
 
 ```
 {
-  "name": "avatar",   // FIXED    - don't change
+  "name": "vote",     // FIXED    - don't change
   "port": 80          // VARIABLE - you choose
 }
 ```
 
 ## Description
 
-This service is responsible of keeping track of, and serving avatars based on a given user id.
+This service's responsibility is to store and serve votes for posts.
 
-At the start of the service, the service will scrape the html from the URL 'https://peanuts.no/menneskene/' and
-extract the email (`.employee-list-block__employee__email a href`) and image url (`.employee-list-block__employee__image (background-image)`) fields for each member (`.employee-list-block__employee`) in the organization. These values will be cached in a dictionary - with the email as a key and the image url as a value, i.e.:
+The comment model should have the following properties:
+- `id`: (?) - unique comment id - can be whatever type you choose.
+- `userId`: (?) - unique user id - must be equal to the id type of the user service.
+- `postId`: (?) - unique post id - must be equal to the id type of the post service.
+- `vote`: (integer) - the vote **must be either `1` or `-1`**
+- `timestamp`: (integer) - created date (equal to javascript's `Date.now()`)
 
-```
-{
-  "jorn.myrland@peanuts.no": "http://www.peanuts.no/globalassets/ansattbilder/jorn-andre-myrland.jpg?width=300&height=300&transform=downfit",
-  "frode.hetland@peanuts.no": "http://www.peanuts.no/globalassets/ansattbilder/frode-hetland.jpg?width=300&height=300&transform=downfit",
-  // ETC...
-}
-```
+**All fields in the model (when returned as JSON) must conform to `lowerCamelCase` formats, to save a little ink during printouts.**
 
-## Dependencies
-
-- User service
-- https://peanuts.no/menneskene/
 
 ## Headers
 
-- Content-Type: image/jpg
+- Content-Type: application/json
 
 ## Endpoints table
 
-| Verb       | Endpoint                 | Description                                           |
-| ----------:|:------------------------ |:------------------------------------------------------|
-| GET        | /:userId                 | Return avatar for user, based on the scraped HTML.    |
+| Verb       | Endpoint                 | Description                            |
+| ----------:|:------------------------ |:---------------------------------------|
+| POST       | /:postId                 | Create a vote for a post.              |
+| GET        | /list                    | Fetch all votes.                       |
+| GET        | /list/:postId            | Fetch all votes for a single post.     |
 
 
 ## Endpoint descriptions
 
-### GET /:userId
+### POST /:postId
 
-**! Requires user ID as path parameter.**
+**! Requires `postId` path parameter.**
+**! Requires JSON data as body.**
 
-**! Important: `Content-Type: image/jpg` must be set for the response.**
+##### Example body structure:
+```
+{
+ "vote": 1,                     // REQUIRED - **must be either `1` or `-1`**
+ "userId": 1234                 // REQUIRED
+}
+```
 
 ##### Description:
 
-Note, you don't have the email for the given user in this request, so you are depending
-on making a request to the `user` service to retreive the email to lookup the email.
+This endpoint will create a comment object with the given parameters: `commentText`, `postId` and `userId`.
 
-When you have the email, you can lookup the image url in you're dictionary - then **proxy
-the image data (from the image url) to the client response**. Note, proxy != redirect.
-This response have the status code `200 OK` and contain a header `Content-Type: image/jpg`.
+The endpoint must validate that no required path/body parts is missing (hehe!).
 
-If the given userId can't be matched to any image, return a `404 NOT FOUND` response.
+The endpoint must validate that the `vote` parameter is either `1` or `-1`.
 
-If any error occurs, return a `500 ERROR` response.
+If validation fails, this endpoint should return a `409 CONFLICT` response with an explanation
+of what went wrong (JSON object with an `error` string), e.g.
+`{ "error": "Illegal vote. Must be either +/- 1"}`
 
-To reduce "lookup time", an image cache by id should be implemented.
+The endpoint should only allow 1 vote per user. If a vote with the same `userId` is
+entered - the old vote should be removed and the new vote should be inserted.
 
+If a vote is registered twice, the vote should be removed. E.g: If the user clicks the up arrow
+twice (like stackoverflow.com), the vote is canceled/removed.
+
+If the post is removed/created successfully, it should be returned as a `200 OK` response, with the following JSON properties:
+```
+{
+ "id": 1,                           // REQUIRED - may be any type
+ "vote": 1,                         // REQUIRED - **must be either `1` or `-1`**
+ "userId": 1234,                    // REQUIRED - must be the same type as the ID in the 'user service'
+ "postId": 1234,                    // REQUIRED - must be the same type as the ID in the 'post service'
+ "timestamp": 1433167411668         // REQUIRED - must be an integer (equal to javascript's Date.now())
+}
+```
+
+If any exceptions occurs, a `500 ERROR` response should be returned.
 
 ##### Response status codes:
 
-- Returns `200 OK` with image data
-- Returns `404 NOT` FOUND if the `userId` did not match any existing users.
+- Returns `200 OK` with the created vote object as JSON.
+- Returns `409 CONFLICT` with an error JSON.
+- Returns `500 ERROR` if any errors occurred.
+
+-------------------------------------------------------------------------------
+
+### GET /list
+
+##### Description:
+
+This endpoint will return a `200 OK` response with a list of all votes for all posts
+(including all properties) in the local database as a JSON array.
+
+If no votes is found, an empty JSON array should be returned.
+
+If any exceptions occurs, a `500 ERROR` response should be returned.
+
+##### Response status codes:
+
+- Returns `200 OK` with a JSON array of all vote objects.
+- Returns `500 ERROR` if any errors occurred.
+
+-------------------------------------------------------------------------------
+
+### GET /list/:postId
+
+**! Requires `postId` path parameter.**
+
+##### Description:
+
+This endpoint will return a `200 OK` response with a list of all votes for the
+given `postId` (including all properties) in the local database as a JSON array.
+
+If no votes is found, an empty JSON array should be returned.
+
+If any exceptions occurs, a `500 ERROR` response should be returned.
+
+##### Response status codes:
+
+- Returns `200 OK` with a JSON array of all vote objects.
 - Returns `500 ERROR` if any errors occurred.
